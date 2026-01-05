@@ -1,0 +1,18 @@
+#cloud-config
+ssh_pwauth: false
+users:
+  - name: user1 
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGjw2xgKZsBnTBVIVT69Tv80Xum1bKoYfCFvKeEGOxJ7 chris@chris-laptop
+chpasswd:
+  expire: False
+  users:
+  - {name: user1, password: password1, type: text}
+
+disable_root: true
+
+# Commands to run at the end of the cloud-init process
+runcmd:
+  - systemctl start ssh
