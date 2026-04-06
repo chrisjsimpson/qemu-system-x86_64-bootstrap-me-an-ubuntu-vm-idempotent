@@ -29,6 +29,8 @@
 
 set -exuo pipefail
 
+KEEP_VM_RUNNING_AFTER_SCRIPT_EXIT="${1:-notset}"
+
 # Want ping to work within the VM?
 # If you’re using QEMU on Linux >= 3.0, it can use unprivileged ICMP ping sockets to allow ping to the Internet. 
 # Ref https://www.qemu.org/docs/master/system/devices/net.html#using-the-user-mode-network-stack
@@ -43,7 +45,10 @@ function clean_exit() {
 }
 
 # See https://tldp.org/LDP/Bash-Beginners-Guide/html/sect_12_02.html#uponExit
-trap clean_exit EXIT
+
+if [[ $KEEP_VM_RUNNING_AFTER_SCRIPT_EXIT != "keep_vm_running_after_script_exit" ]]; then
+  trap clean_exit EXIT
+fi
 
 echo Checking qemu-system-x86_64 exists
 qemu-system-x86_64 --version
@@ -124,6 +129,7 @@ echo $PYTHON_WEB_SERVER_PID > ./PYTHON_WEB_SERVER_PID
 qemu-system-x86_64 -m 5G \
   -smbios type=1,serial=ds='nocloud;s=http://10.0.2.2:8000/' \
   -cpu host \
+  -m 1G \
   -accel kvm -accel tcg \
   -drive file=ubuntu-24.04-server-cloudimg-amd64.img,format=qcow2 \
   -netdev user,id=net0,hostfwd=tcp::2222-:22 \
@@ -160,7 +166,13 @@ echo To access the Qemu monitor run:
 echo nc 127.0.0.1 4444
 echo To SSH into the VM run:
 echo ssh -p 2222 -i dummykey user1@127.0.0.1
+echo If you want to forward ports from your host to your VM guest,
+echo '(e.g. A webserver in the VM, and want to access it on your host)'
+echo use ssh local forwarding e.g:
+echo ssh -p 2222 -L 8001:127.0.0.1:80 -i dummykey user1@127.0.0.1
+echo Then visit http://127.0.0.1:8001 in your host web browser.
 read -p "Press any key & enter to terminate all"
+#wait # use wait if you don't want to use the read above
 
 # Notes
 # See 
